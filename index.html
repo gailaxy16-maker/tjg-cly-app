@@ -169,12 +169,25 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
   border-radius:16px;
   padding:13px 4px 11px;
   box-shadow:var(--sh-card);
-  transition:transform .15s ease,box-shadow .2s ease;
+  cursor:pointer;
+  transition:transform .15s ease,box-shadow .2s ease,background .2s ease;
 }
 .kpi-cell:active{transform:scale(.95);}
+.kpi-cell.kc-out.active{background:var(--coral-bg);box-shadow:0 0 0 2px var(--coral-mid),var(--sh-card);}
+.kpi-cell.kc-in.active{background:var(--mint-bg);box-shadow:0 0 0 2px var(--mint-mid),var(--sh-card);}
+.kpi-cell.kc-diff.active,.kpi-cell.kc-cust.active{background:var(--peach-bg);box-shadow:0 0 0 2px var(--peach-mid),var(--sh-card);}
 .kpi-val{font-size:24px;font-weight:800;line-height:1;display:inline-block;transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
 .kpi-val.bump{transform:scale(1.22);}
 .kpi-lbl{font-size:12px;color:var(--text2);font-weight:500;margin-top:4px;}
+
+/* ── COLLAPSIBLE HEADER (swipe feed to hide, like IG/FB) ── */
+.app-header{
+  flex-shrink:0;
+  overflow:hidden;
+  max-height:var(--header-h,600px);
+  transition:max-height .32s cubic-bezier(.4,0,.2,1);
+}
+.app-header.collapsed{max-height:0;}
 
 /* ── FEED ── */
 .feed{padding:10px 14px 20px;display:flex;flex-direction:column;gap:12px;}
@@ -355,6 +368,9 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
 </head>
 <body>
 
+<!-- COLLAPSIBLE HEADER -->
+<div class="app-header" id="appHeader">
+
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="topbar-logo">TJG CLY <span id="runDateLbl"></span></div>
@@ -391,11 +407,14 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
 
 <!-- KPI ROW -->
 <div class="kpi-row">
-  <div class="kpi-cell"><div class="kpi-val" id="kOut" style="color:var(--coral-text)">—</div><div class="kpi-lbl">OUT รวม</div></div>
-  <div class="kpi-cell"><div class="kpi-val" id="kIn" style="color:var(--mint-text)">—</div><div class="kpi-lbl">IN รวม</div></div>
-  <div class="kpi-cell"><div class="kpi-val" id="kDiff" style="color:var(--peach-text)">—</div><div class="kpi-lbl">คงค้าง SN</div></div>
-  <div class="kpi-cell"><div class="kpi-val" id="kCust">—</div><div class="kpi-lbl">ลูกค้ามีค้าง</div></div>
+  <div class="kpi-cell kc-out" id="kpiOutCell" onclick="setSortMode('out')"><div class="kpi-val" id="kOut" style="color:var(--coral-text)">—</div><div class="kpi-lbl">OUT รวม</div></div>
+  <div class="kpi-cell kc-in" id="kpiInCell" onclick="setSortMode('in')"><div class="kpi-val" id="kIn" style="color:var(--mint-text)">—</div><div class="kpi-lbl">IN รวม</div></div>
+  <div class="kpi-cell kc-diff" id="kpiDiffCell" onclick="filterPending()"><div class="kpi-val" id="kDiff" style="color:var(--peach-text)">—</div><div class="kpi-lbl">คงค้าง SN</div></div>
+  <div class="kpi-cell kc-cust" id="kpiCustCell" onclick="filterPending()"><div class="kpi-val" id="kCust">—</div><div class="kpi-lbl">ลูกค้ามีค้าง</div></div>
 </div>
+
+</div>
+<!-- /COLLAPSIBLE HEADER -->
 
 <!-- FEED -->
 <div class="scroll-area" id="feedArea">
@@ -450,6 +469,7 @@ const DESKTOP_URL = API_URL;
 let ALL_TXN=[],PENDING=[];
 let DATE_FROM='',DATE_TO='';
 let SHOW_PENDING_ONLY=false;
+let SORT_MODE='diff';
 
 /* ── Pastel avatar colors ── */
 const PASTEL_COLORS=[
@@ -499,6 +519,7 @@ function loadData(clear){
     document.getElementById('loadingDiv').style.display='none';
     document.getElementById('feed').style.display='flex';
     renderFeed();
+    syncHeaderHeight();
   };
 
   const script=document.createElement('script');
@@ -521,8 +542,9 @@ function setPreset(mode,btn){
   else if(mode==='month'){DATE_FROM=iso(new Date(n.getFullYear(),n.getMonth(),1));DATE_TO=iso(n);}
   else if(mode==='3month'){const s=new Date(n);s.setMonth(s.getMonth()-3);DATE_FROM=iso(s);DATE_TO=iso(n);}
   else if(mode==='all'){DATE_FROM='2000-01-01';DATE_TO=iso(n);}
-  else if(mode==='custom'){document.getElementById('customRow').classList.add('show');return;}
+  else if(mode==='custom'){document.getElementById('customRow').classList.add('show');syncHeaderHeight();return;}
   document.getElementById('searchInput').value='';
+  updateKpiActiveStates();
   renderFeed();
 }
 function applyCustom(){
@@ -533,7 +555,19 @@ function applyCustom(){
 function filterPending(){
   SHOW_PENDING_ONLY=!SHOW_PENDING_ONLY;
   document.querySelectorAll('.bn-item').forEach((b,i)=>{b.classList.toggle('on',i===(SHOW_PENDING_ONLY?1:0));});
+  updateKpiActiveStates();
   renderFeed();
+}
+function setSortMode(mode){
+  SORT_MODE=(SORT_MODE===mode)?'diff':mode;
+  updateKpiActiveStates();
+  renderFeed();
+}
+function updateKpiActiveStates(){
+  document.getElementById('kpiOutCell').classList.toggle('active',SORT_MODE==='out');
+  document.getElementById('kpiInCell').classList.toggle('active',SORT_MODE==='in');
+  document.getElementById('kpiDiffCell').classList.toggle('active',SHOW_PENDING_ONLY);
+  document.getElementById('kpiCustCell').classList.toggle('active',SHOW_PENDING_ONLY);
 }
 
 /* ── RENDER ── */
@@ -551,7 +585,11 @@ function renderFeed(){
   let rows=Object.values(map)
     .filter(c=>!q||(c.customer.toLowerCase().includes(q)||c.custNo.toLowerCase().includes(q)))
     .filter(c=>!SHOW_PENDING_ONLY||c.out>c.in)
-    .sort((a,b)=>(Math.max(0,b.out-b.in)-Math.max(0,a.out-a.in))||b.out-a.out);
+    .sort((a,b)=>{
+      if(SORT_MODE==='out') return b.out-a.out;
+      if(SORT_MODE==='in') return b.in-a.in;
+      return (Math.max(0,b.out-b.in)-Math.max(0,a.out-a.in))||b.out-a.out;
+    });
 
   const totalOut=rows.reduce((s,c)=>s+c.out,0);
   const totalIn=rows.reduce((s,c)=>s+c.in,0);
@@ -740,6 +778,43 @@ function reload(){
   document.getElementById('feed').style.display='none';
   loadData(true);
 }
+
+/* ── COLLAPSIBLE HEADER — swipe the feed up to tuck it away, like IG/FB ── */
+const appHeader=document.getElementById('appHeader');
+const feedArea=document.getElementById('feedArea');
+let headerHidden=false,lastScrollY=0,scrollTicking=false;
+
+function syncHeaderHeight(){
+  if(!appHeader.classList.contains('collapsed')){
+    appHeader.style.setProperty('--header-h',appHeader.scrollHeight+'px');
+  }
+}
+function hideHeader(){
+  if(headerHidden) return;
+  headerHidden=true;
+  appHeader.classList.add('collapsed');
+}
+function showHeader(){
+  if(!headerHidden){ syncHeaderHeight(); return; }
+  headerHidden=false;
+  appHeader.classList.remove('collapsed');
+  syncHeaderHeight();
+}
+feedArea.addEventListener('scroll',()=>{
+  if(scrollTicking) return;
+  scrollTicking=true;
+  requestAnimationFrame(()=>{
+    const y=feedArea.scrollTop;
+    const delta=y-lastScrollY;
+    if(y<=8) showHeader();
+    else if(delta>6 && y>40) hideHeader();
+    else if(delta<-6) showHeader();
+    lastScrollY=y;
+    scrollTicking=false;
+  });
+},{passive:true});
+window.addEventListener('resize',syncHeaderHeight);
+syncHeaderHeight();
 
 /* ── PWA service worker ── */
 if('serviceWorker' in navigator){
