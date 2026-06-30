@@ -125,14 +125,18 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
   font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;
   padding:7px 16px;border-radius:20px;white-space:nowrap;cursor:pointer;flex-shrink:0;
   box-shadow:0 1px 3px rgba(80,50,30,.06);
+  transition:background .28s cubic-bezier(.4,0,.2,1),color .28s ease,border-color .28s ease,box-shadow .28s ease,transform .15s ease;
 }
+.d-chip:active{transform:scale(.92);}
 .d-chip.on{
   background:var(--text);color:#fff;border-color:var(--text);
   box-shadow:0 2px 6px rgba(80,50,30,.18);
 }
 .custom-row{display:none;gap:8px;align-items:center;padding:10px 16px;background:var(--topbar);border-bottom:1px solid var(--border);}
-.custom-row.show{display:flex;}
-.d-input{flex:1;border:1px solid var(--border2);border-radius:10px;padding:9px 12px;font-family:'Sarabun',sans-serif;font-size:15px;color:var(--text);outline:none;background:var(--card);}
+.custom-row.show{display:flex;animation:slideDown .25s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.d-input{flex:1;border:1px solid var(--border2);border-radius:10px;padding:9px 12px;font-family:'Sarabun',sans-serif;font-size:15px;color:var(--text);outline:none;background:var(--card);transition:border-color .2s ease,box-shadow .2s ease;}
+.d-input:focus{border-color:var(--peach-mid);box-shadow:0 0 0 3px var(--peach-bg);}
 .d-sep{color:var(--text2);font-size:15px;}
 
 /* ── SEARCH ── */
@@ -141,6 +145,11 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
   background:var(--page);border:1px solid var(--border2);border-radius:14px;
   display:flex;align-items:center;gap:10px;padding:9px 14px;
   box-shadow:inset 0 1px 3px rgba(80,50,30,.05);
+  transition:border-color .25s ease,box-shadow .25s ease,background .25s ease;
+}
+.search-inner:focus-within{
+  background:var(--card);border-color:var(--peach-mid);
+  box-shadow:inset 0 1px 3px rgba(80,50,30,.05),0 0 0 3px var(--peach-bg);
 }
 .search-inner input{background:transparent;border:none;outline:none;font-family:'Sarabun',sans-serif;font-size:16px;color:var(--text);width:100%;}
 .search-inner input::placeholder{color:var(--text2);}
@@ -157,8 +166,11 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
   border-radius:16px;
   padding:13px 4px 11px;
   box-shadow:var(--sh-card);
+  transition:transform .15s ease,box-shadow .2s ease;
 }
-.kpi-val{font-size:24px;font-weight:800;line-height:1;}
+.kpi-cell:active{transform:scale(.95);}
+.kpi-val{font-size:24px;font-weight:800;line-height:1;display:inline-block;transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+.kpi-val.bump{transform:scale(1.22);}
 .kpi-lbl{font-size:12px;color:var(--text2);font-weight:500;margin-top:4px;}
 
 /* ── FEED ── */
@@ -541,10 +553,10 @@ function renderFeed(){
   const totalOut=rows.reduce((s,c)=>s+c.out,0);
   const totalIn=rows.reduce((s,c)=>s+c.in,0);
   const custWithDiff=rows.filter(c=>c.out>c.in).length;
-  document.getElementById('kOut').textContent=totalOut;
-  document.getElementById('kIn').textContent=totalIn;
-  document.getElementById('kDiff').textContent=PENDING.length;
-  document.getElementById('kCust').textContent=custWithDiff;
+  animateNumber('kOut',totalOut);
+  animateNumber('kIn',totalIn);
+  animateNumber('kDiff',PENDING.length);
+  animateNumber('kCust',custWithDiff);
 
   renderStories(rows);
 
@@ -698,6 +710,26 @@ function toggleSheetExpand(){
 /* ── HELPERS ── */
 const TH_M=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 function thDate(iso){if(!iso)return'—';const p=iso.split('-');return(+p[2])+' '+TH_M[+p[1]]+' '+(+p[0]+543);}
+const KPI_PREV={};
+function animateNumber(id,to){
+  const el=document.getElementById(id);
+  const from=KPI_PREV.hasOwnProperty(id)?KPI_PREV[id]:0;
+  KPI_PREV[id]=to;
+  if(from===to){ el.textContent=to; return; }
+  const dur=420,start=performance.now();
+  function tick(now){
+    const t=Math.min(1,(now-start)/dur);
+    const eased=1-Math.pow(1-t,3);
+    el.textContent=Math.round(from+(to-from)*eased);
+    if(t<1) requestAnimationFrame(tick);
+    else{
+      el.textContent=to;
+      el.classList.add('bump');
+      setTimeout(()=>el.classList.remove('bump'),300);
+    }
+  }
+  requestAnimationFrame(tick);
+}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function escAttr(s){return esc(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
 function reload(){
