@@ -77,7 +77,11 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
 }
 .topbar-logo{font-size:26px;font-weight:800;letter-spacing:-.5px;color:var(--text);}
 .topbar-logo span{color:var(--text2);font-weight:400;font-size:15px;margin-left:6px;}
-.icon-btn{background:var(--page);border:1px solid var(--border2);border-radius:50%;width:40px;height:40px;cursor:pointer;color:var(--text);font-size:20px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-btn);}
+.topbar-actions{display:flex;align-items:center;gap:8px;}
+.icon-btn{background:var(--page);border:1px solid var(--border2);border-radius:50%;width:40px;height:40px;cursor:pointer;color:var(--text);font-size:20px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-btn);transition:transform .2s ease,background .2s ease;}
+.icon-btn:active{transform:scale(.9);}
+#headerToggleBtn{transition:transform .3s cubic-bezier(.4,0,.2,1);}
+#headerToggleBtn.flip{transform:rotate(180deg);}
 
 /* ── SCROLL AREA ── */
 .scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -368,14 +372,17 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
 </head>
 <body>
 
-<!-- COLLAPSIBLE HEADER -->
-<div class="app-header" id="appHeader">
-
-<!-- TOP BAR -->
+<!-- TOP BAR (always visible) -->
 <div class="topbar">
   <div class="topbar-logo">TJG CLY <span id="runDateLbl"></span></div>
-  <button class="icon-btn" onclick="reload()" aria-label="รีเฟรชข้อมูล">↻</button>
+  <div class="topbar-actions">
+    <button class="icon-btn" id="headerToggleBtn" onclick="toggleHeader()" aria-label="ย่อ/ขยายแถบบน">⌃</button>
+    <button class="icon-btn" onclick="reload()" aria-label="รีเฟรชข้อมูล">↻</button>
+  </div>
 </div>
+
+<!-- COLLAPSIBLE HEADER -->
+<div class="app-header" id="appHeader">
 
 <!-- STORIES -->
 <div class="stories-bar" id="storiesBar">
@@ -779,40 +786,22 @@ function reload(){
   loadData(true);
 }
 
-/* ── COLLAPSIBLE HEADER — swipe the feed up to tuck it away, like IG/FB ── */
+/* ── COLLAPSIBLE HEADER — manual toggle button (more reliable than scroll-detection across devices) ── */
 const appHeader=document.getElementById('appHeader');
-const feedArea=document.getElementById('feedArea');
-let headerHidden=false,lastScrollY=0,scrollTicking=false;
+const headerToggleBtn=document.getElementById('headerToggleBtn');
+let headerHidden=false;
 
 function syncHeaderHeight(){
-  if(!appHeader.classList.contains('collapsed')){
+  if(!headerHidden){
     appHeader.style.setProperty('--header-h',appHeader.scrollHeight+'px');
   }
 }
-function hideHeader(){
-  if(headerHidden) return;
-  headerHidden=true;
-  appHeader.classList.add('collapsed');
+function toggleHeader(){
+  headerHidden=!headerHidden;
+  appHeader.classList.toggle('collapsed',headerHidden);
+  headerToggleBtn.classList.toggle('flip',headerHidden);
+  if(!headerHidden) syncHeaderHeight();
 }
-function showHeader(){
-  if(!headerHidden){ syncHeaderHeight(); return; }
-  headerHidden=false;
-  appHeader.classList.remove('collapsed');
-  syncHeaderHeight();
-}
-feedArea.addEventListener('scroll',()=>{
-  if(scrollTicking) return;
-  scrollTicking=true;
-  requestAnimationFrame(()=>{
-    const y=feedArea.scrollTop;
-    const delta=y-lastScrollY;
-    if(y<=8) showHeader();
-    else if(delta>6 && y>40) hideHeader();
-    else if(delta<-6) showHeader();
-    lastScrollY=y;
-    scrollTicking=false;
-  });
-},{passive:true});
 window.addEventListener('resize',syncHeaderHeight);
 syncHeaderHeight();
 

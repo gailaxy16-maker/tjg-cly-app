@@ -1,4 +1,4 @@
-const CACHE = 'tjg-cly-v6';
+const CACHE = 'tjg-cly-v7';
 const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
