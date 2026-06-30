@@ -431,28 +431,44 @@ function initials(s){const w=s.trim().split(/\s+/);return w.length>1?(w[0][0]+w[
   if(df)df.value=DATE_FROM;if(dt)dt.value=DATE_TO;
 })();
 
-/* ── DATA LOADING (fetch จาก Apps Script API) ── */
+/* ── DATA LOADING (JSONP — เลี่ยงปัญหา CORS ของ Apps Script) ── */
+let JSONP_SEQ=0;
 function loadData(clear){
-  const url = API_URL + '?api=1' + (clear ? '&clear=1' : '');
-  fetch(url, {cache:'no-store'})
-    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-    .then(d=>{
-      if(d.error) throw new Error(d.error);
-      ALL_TXN=d.transactions||[];PENDING=d.pending||[];
-      const lbl=document.getElementById('runDateLbl');
-      if(lbl&&d.runDate)lbl.textContent='· '+thDate(d.runDate);
-      document.getElementById('loadingDiv').style.display='none';
-      document.getElementById('feed').style.display='flex';
-      renderFeed();
-    })
-    .catch(e=>{
-      document.getElementById('loadingDiv').style.display='flex';
-      document.getElementById('feed').style.display='none';
-      document.getElementById('loadingDiv').innerHTML=
-        '<div style="text-align:center;padding:30px"><div style="font-size:36px;margin-bottom:10px">⚠️</div>'
-        +'<div style="font-size:14px;color:var(--text2)">โหลดข้อมูลไม่ได้<br>'+esc(e.message||'error')+'</div>'
-        +'<button onclick="loadData(false)" style="margin-top:16px;padding:9px 22px;border:none;background:var(--text);color:#fff;border-radius:10px;font-family:\'Sarabun\',sans-serif;font-size:14px;cursor:pointer">ลองใหม่</button></div>';
-    });
+  document.getElementById('loadingDiv').style.display='flex';
+  document.getElementById('feed').style.display='none';
+  document.getElementById('loadingDiv').innerHTML=
+    '<div class="spinner"></div><div class="loading-txt">กำลังโหลดข้อมูล...</div>';
+
+  const cbName='tjgCb_'+(++JSONP_SEQ)+'_'+Date.now();
+  const timer=setTimeout(()=>{ cleanup(); showError('หมดเวลาเชื่อมต่อ'); }, 15000);
+
+  function cleanup(){
+    clearTimeout(timer);
+    delete window[cbName];
+    if(script.parentNode) script.parentNode.removeChild(script);
+  }
+  function showError(msg){
+    document.getElementById('loadingDiv').innerHTML=
+      '<div style="text-align:center;padding:30px"><div style="font-size:36px;margin-bottom:10px">⚠️</div>'
+      +'<div style="font-size:14px;color:var(--text2)">โหลดข้อมูลไม่ได้<br>'+esc(msg||'error')+'</div>'
+      +'<button onclick="loadData('+(clear?'true':'false')+')" style="margin-top:16px;padding:9px 22px;border:none;background:var(--text);color:#fff;border-radius:10px;font-family:\'Sarabun\',sans-serif;font-size:14px;cursor:pointer">ลองใหม่</button></div>';
+  }
+
+  window[cbName]=function(d){
+    cleanup();
+    if(d.error){ showError(d.error); return; }
+    ALL_TXN=d.transactions||[];PENDING=d.pending||[];
+    const lbl=document.getElementById('runDateLbl');
+    if(lbl&&d.runDate)lbl.textContent='· '+thDate(d.runDate);
+    document.getElementById('loadingDiv').style.display='none';
+    document.getElementById('feed').style.display='flex';
+    renderFeed();
+  };
+
+  const script=document.createElement('script');
+  script.src=API_URL+'?api=1&callback='+cbName+(clear?'&clear=1':'')+'&_='+Date.now();
+  script.onerror=function(){ cleanup(); showError('เชื่อมต่อ Apps Script ไม่ได้'); };
+  document.body.appendChild(script);
 }
 loadData(false);
 
