@@ -170,7 +170,10 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
   border-radius:20px;
   box-shadow:var(--sh-card);
   overflow:hidden;
+  cursor:pointer;
+  transition:transform .15s ease,box-shadow .15s ease;
 }
+.post:active{transform:scale(.985);box-shadow:0 1px 4px rgba(80,50,30,.07),0 0 0 0.5px rgba(80,50,30,.07);}
 .post-header{display:flex;align-items:center;padding:15px 16px 12px;gap:12px;}
 .post-avatar{
   width:52px;height:52px;border-radius:50%;
@@ -246,14 +249,29 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
 .sheet{
   position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;
   background:var(--card);border-radius:24px 24px 0 0;
-  z-index:101;display:flex;flex-direction:column;max-height:88vh;
-  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  z-index:101;display:flex;flex-direction:column;height:82vh;
+  transform:translateY(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);
   padding-bottom:env(safe-area-inset-bottom,0);
   box-shadow:var(--sh-sheet);
+  touch-action:none;
 }
-.sheet.show{transform:translateY(0);}
-.sheet-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:14px auto 0;}
-.sheet-topbar{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 18px 0;}
+.sheet.dragging{transition:none;}
+.sheet.show.snap-half{transform:translateY(48%);}
+.sheet.show.snap-full{transform:translateY(0);}
+.sheet-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:14px auto 0;cursor:grab;touch-action:none;}
+.sheet-handle:active{cursor:grabbing;}
+.sheet-topbar{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 18px 0;touch-action:none;cursor:grab;}
+.sheet-topbar:active{cursor:grabbing;}
+.sheet-actions{display:flex;gap:8px;flex-shrink:0;}
+.sheet-expand{
+  background:var(--page);border:1px solid var(--border2);
+  width:36px;height:36px;border-radius:50%;
+  font-size:15px;color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--sh-btn);
+  transition:transform .2s ease;
+}
+.sheet.snap-full .sheet-expand{transform:rotate(180deg);}
 .sheet-avatar{
   width:58px;height:58px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -386,13 +404,16 @@ body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0
 <!-- BOTTOM SHEET -->
 <div class="sheet" id="sheet">
   <div class="sheet-handle"></div>
-  <div class="sheet-topbar">
+  <div class="sheet-topbar" id="sheetDragHandle">
     <div class="sheet-avatar" id="shAvatar"></div>
     <div class="sheet-meta">
       <div class="sheet-name" id="shName">—</div>
       <div class="sheet-no" id="shNo">—</div>
     </div>
-    <button class="sheet-close" onclick="closeSheet()" aria-label="ปิด">✕</button>
+    <div class="sheet-actions">
+      <button class="sheet-expand" onclick="toggleSheetExpand()" aria-label="ขยาย/ย่อ">⌃</button>
+      <button class="sheet-close" onclick="closeSheet()" aria-label="ปิด">✕</button>
+    </div>
   </div>
   <div class="sheet-stats">
     <div class="sheet-stat ss-out"><div class="sheet-stat-val" id="shOut">—</div><div class="sheet-stat-lbl">OUT</div></div>
@@ -541,7 +562,7 @@ function renderFeed(){
     const pSN=PENDING.filter(p=>p.custNo===c.custNo);
     const gasArr=[...c.gasSet].slice(0,4);
 
-    return `<div class="post">
+    return `<div class="post" onclick="openSheet('${esc(c.custNo)}','${escAttr(c.customer)}',${c.out},${c.in})">
       <div class="post-header">
         <div class="post-avatar" style="background:${bgColor};color:${txtColor}">${ins}</div>
         <div class="post-meta">
@@ -557,7 +578,7 @@ function renderFeed(){
       </div>
       ${gasArr.length?`<div class="post-tags">${gasArr.map(g=>`<span class="gas-tag">#${esc(g.replace(/\s+/g,''))}</span>`).join('')}${c.gasSet.size>4?`<span class="gas-tag">+${c.gasSet.size-4}</span>`:''}</div>`:''}
       <div class="post-action">
-        <button class="${hasDiff?'btn-detail':'btn-ok'}" onclick="openSheet('${esc(c.custNo)}','${escAttr(c.customer)}',${c.out},${c.in})">
+        <button class="${hasDiff?'btn-detail':'btn-ok'}" tabindex="-1">
           ${hasDiff?`📋 ดู SN คงค้าง ${pSN.length} รายการ →`:'✅ ไม่มีค้าง'}
         </button>
       </div>
@@ -614,15 +635,65 @@ function openSheet(custNo,custName,outCnt,inCnt){
     }).join('');
   }
 
+  const sheetEl=document.getElementById('sheet');
+  sheetEl.style.transform='';
+  sheetEl.classList.remove('snap-full');
+  sheetEl.classList.add('snap-half');
   document.getElementById('overlay').classList.add('show');
-  document.getElementById('sheet').classList.add('show');
+  sheetEl.classList.add('show');
   document.body.style.overflow='hidden';
 }
 function closeSheet(){
+  const sheetEl=document.getElementById('sheet');
   document.getElementById('overlay').classList.remove('show');
-  document.getElementById('sheet').classList.remove('show');
+  sheetEl.classList.remove('show','snap-half','snap-full');
+  sheetEl.style.transform='';
   document.body.style.overflow='';
 }
+function toggleSheetExpand(){
+  const sheetEl=document.getElementById('sheet');
+  sheetEl.classList.toggle('snap-full');
+  sheetEl.classList.toggle('snap-half');
+}
+
+/* ── BOTTOM SHEET — drag to resize/dismiss ── */
+(function(){
+  const sheetEl=document.getElementById('sheet');
+  const dragZone=document.getElementById('sheetDragHandle');
+  let drag=null;
+
+  function start(clientY){
+    drag={startY:clientY,startTranslate:sheetEl.classList.contains('snap-full')?0:sheetEl.offsetHeight*0.48,height:sheetEl.offsetHeight};
+    sheetEl.classList.add('dragging');
+  }
+  function move(clientY){
+    if(!drag) return;
+    let y=drag.startTranslate+(clientY-drag.startY);
+    y=Math.max(0,Math.min(y,drag.height));
+    sheetEl.style.transform='translateY('+y+'px)';
+  }
+  function end(clientY){
+    if(!drag) return;
+    let y=drag.startTranslate+(clientY-drag.startY);
+    y=Math.max(0,Math.min(y,drag.height));
+    const frac=y/drag.height;
+    sheetEl.classList.remove('dragging');
+    sheetEl.style.transform='';
+    if(frac>0.62){
+      closeSheet();
+    }else if(frac>0.20){
+      sheetEl.classList.remove('snap-full');sheetEl.classList.add('snap-half');
+    }else{
+      sheetEl.classList.remove('snap-half');sheetEl.classList.add('snap-full');
+    }
+    drag=null;
+  }
+
+  dragZone.addEventListener('pointerdown',e=>{ start(e.clientY); dragZone.setPointerCapture(e.pointerId); });
+  dragZone.addEventListener('pointermove',e=>{ if(drag) move(e.clientY); });
+  dragZone.addEventListener('pointerup',e=>end(e.clientY));
+  dragZone.addEventListener('pointercancel',e=>end(e.clientY));
+})();
 
 /* ── HELPERS ── */
 const TH_M=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
