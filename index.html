@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=360,initial-scale=1">
+<meta name="theme-color" content="#F8F4EF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="TJG CLY">
+<title>TJG CLY</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  /* ── Pastel palette ── */
+  --page:#F8F4EF;          /* warm parchment */
+  --card:#FFFFFF;
+  --topbar:#FFFCF8;
+
+  --text:#3A3330;          /* warm near-black */
+  --text2:#8A7E78;         /* muted warm gray */
+  --border:#EDE5DE;        /* warm hairline */
+  --border2:#DDD5CE;       /* slightly stronger */
+
+  /* pastel coral — OUT */
+  --coral-bg:#FFE8E0;
+  --coral-mid:#F0A090;
+  --coral-text:#A84030;
+  --coral-ring:linear-gradient(135deg,#FFBCAE,#F0A090,#E87888);
+
+  /* pastel mint — IN */
+  --mint-bg:#DCF5EB;
+  --mint-mid:#80D4AC;
+  --mint-text:#1E7A54;
+  --mint-ring:linear-gradient(135deg,#A8E8CC,#80D4B0,#88C8E8);
+
+  /* pastel peach — diff/pending */
+  --peach-bg:#FFF0DC;
+  --peach-mid:#F0C080;
+  --peach-text:#A86818;
+  --peach-ring:linear-gradient(135deg,#FFD8A8,#F0C080,#F0A888);
+
+  /* pastel lavender — neutral accent */
+  --lav-bg:#EEE8FF;
+  --lav-text:#5E4AB0;
+
+  /* pastel sky */
+  --sky-bg:#E0EEFF;
+  --sky-text:#2C5EA0;
+
+  /* shadows for dimension */
+  --sh-card:0 2px 8px rgba(80,50,30,.07),0 0 0 0.5px rgba(80,50,30,.07);
+  --sh-story:0 4px 12px rgba(80,50,30,.10);
+  --sh-btn:0 2px 6px rgba(80,50,30,.10),0 0.5px 0 rgba(80,50,30,.10);
+  --sh-sheet:0 -4px 24px rgba(80,50,30,.12),0 -1px 0 rgba(80,50,30,.06);
+
+  --ring-pending:linear-gradient(135deg,#FFBCAE,#E87888,#C8A0E8);
+  --ring-ok:linear-gradient(135deg,#A8E8CC,#80D4B0,#88C8E8);
+  --ring-gray:#DDD5CE;
+}
+html,body{height:100%;font-family:'Sarabun',system-ui,sans-serif;background:var(--page);color:var(--text);font-size:16px;}
+body{display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0 auto;}
+
+/* ── TOP BAR ── */
+.topbar{
+  background:var(--topbar);
+  border-bottom:1px solid var(--border);
+  box-shadow:0 1px 0 var(--border),0 2px 8px rgba(80,50,30,.04);
+  padding:12px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+  padding-top:calc(12px + env(safe-area-inset-top,0));
+}
+.topbar-logo{font-size:26px;font-weight:800;letter-spacing:-.5px;color:var(--text);}
+.topbar-logo span{color:var(--text2);font-weight:400;font-size:15px;margin-left:6px;}
+.icon-btn{background:var(--page);border:1px solid var(--border2);border-radius:50%;width:40px;height:40px;cursor:pointer;color:var(--text);font-size:20px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-btn);}
+
+/* ── SCROLL AREA ── */
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+/* ── STORIES ── */
+.stories-bar{
+  background:var(--topbar);
+  border-bottom:1px solid var(--border);
+  padding:14px 16px 16px;
+  overflow-x:auto;display:flex;gap:16px;
+  scrollbar-width:none;flex-shrink:0;
+}
+.stories-bar::-webkit-scrollbar{display:none;}
+.story-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;}
+.story-ring{
+  width:80px;height:80px;border-radius:50%;
+  padding:3px;
+  background:var(--ring-pending);
+  box-shadow:var(--sh-story);
+}
+.story-ring.ok{background:var(--ring-ok);}
+.story-ring.gray{background:var(--ring-gray);box-shadow:none;}
+.story-avatar{width:100%;height:100%;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;padding:3px;}
+.avatar-inner{
+  width:100%;height:100%;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:800;color:#fff;
+  box-shadow:inset 0 -2px 4px rgba(0,0,0,.12);
+}
+.story-lbl{font-size:13px;color:var(--text);font-weight:600;max-width:82px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.story-cnt{font-size:12px;color:var(--text2);}
+
+/* ── DATE FILTER ── */
+.date-bar{
+  background:var(--topbar);
+  padding:10px 16px;display:flex;gap:8px;
+  overflow-x:auto;align-items:center;
+  border-bottom:1px solid var(--border);
+  scrollbar-width:none;flex-shrink:0;
+}
+.date-bar::-webkit-scrollbar{display:none;}
+.d-chip{
+  background:var(--page);border:1px solid var(--border2);
+  color:var(--text2);
+  font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;
+  padding:7px 16px;border-radius:20px;white-space:nowrap;cursor:pointer;flex-shrink:0;
+  box-shadow:0 1px 3px rgba(80,50,30,.06);
+}
+.d-chip.on{
+  background:var(--text);color:#fff;border-color:var(--text);
+  box-shadow:0 2px 6px rgba(80,50,30,.18);
+}
+.custom-row{display:none;gap:8px;align-items:center;padding:10px 16px;background:var(--topbar);border-bottom:1px solid var(--border);}
+.custom-row.show{display:flex;}
+.d-input{flex:1;border:1px solid var(--border2);border-radius:10px;padding:9px 12px;font-family:'Sarabun',sans-serif;font-size:15px;color:var(--text);outline:none;background:var(--card);}
+.d-sep{color:var(--text2);font-size:15px;}
+
+/* ── SEARCH ── */
+.search-bar{background:var(--topbar);padding:10px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.search-inner{
+  background:var(--page);border:1px solid var(--border2);border-radius:14px;
+  display:flex;align-items:center;gap:10px;padding:9px 14px;
+  box-shadow:inset 0 1px 3px rgba(80,50,30,.05);
+}
+.search-inner input{background:transparent;border:none;outline:none;font-family:'Sarabun',sans-serif;font-size:16px;color:var(--text);width:100%;}
+.search-inner input::placeholder{color:var(--text2);}
+
+/* ── KPI ROW ── */
+.kpi-row{
+  margin:14px 14px 6px;
+  display:flex;gap:10px;
+  flex-shrink:0;
+}
+.kpi-cell{
+  flex:1;text-align:center;
+  background:var(--card);
+  border-radius:16px;
+  padding:13px 4px 11px;
+  box-shadow:var(--sh-card);
+}
+.kpi-val{font-size:24px;font-weight:800;line-height:1;}
+.kpi-lbl{font-size:12px;color:var(--text2);font-weight:500;margin-top:4px;}
+
+/* ── FEED ── */
+.feed{padding:10px 14px 20px;display:flex;flex-direction:column;gap:12px;}
+
+/* Post card */
+.post{
+  background:var(--card);
+  border-radius:20px;
+  box-shadow:var(--sh-card);
+  overflow:hidden;
+}
+.post-header{display:flex;align-items:center;padding:15px 16px 12px;gap:12px;}
+.post-avatar{
+  width:52px;height:52px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:800;color:#fff;flex-shrink:0;
+  box-shadow:0 2px 6px rgba(0,0,0,.15),inset 0 -2px 4px rgba(0,0,0,.10);
+}
+.post-meta{flex:1;overflow:hidden;}
+.post-name{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.post-handle{font-size:13px;color:var(--text2);}
+.post-status{font-size:24px;flex-shrink:0;}
+
+/* Stats */
+.post-stats{
+  display:flex;
+  margin:0 14px;
+  border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;
+  box-shadow:inset 0 1px 3px rgba(80,50,30,.04);
+}
+.pstat{flex:1;text-align:center;padding:13px 4px;}
+.pstat+.pstat{border-left:1px solid var(--border);}
+.pstat-val{font-size:26px;font-weight:800;line-height:1;}
+.pstat-lbl{font-size:12px;font-weight:700;letter-spacing:.04em;margin-top:4px;}
+.pstat.s-out{background:var(--coral-bg);}
+.pstat.s-out .pstat-val,.pstat.s-out .pstat-lbl{color:var(--coral-text);}
+.pstat.s-in{background:var(--mint-bg);}
+.pstat.s-in .pstat-val,.pstat.s-in .pstat-lbl{color:var(--mint-text);}
+.pstat.s-diff{background:var(--peach-bg);}
+.pstat.s-diff .pstat-val,.pstat.s-diff .pstat-lbl{color:var(--peach-text);}
+.pstat.s-diff.zero{background:var(--page);}
+.pstat.s-diff.zero .pstat-val,.pstat.s-diff.zero .pstat-lbl{color:var(--text2);}
+
+/* Gas tags */
+.post-tags{padding:10px 16px 0;display:flex;flex-wrap:wrap;gap:6px;}
+.gas-tag{
+  font-size:13px;font-weight:600;
+  background:var(--lav-bg);color:var(--lav-text);
+  padding:4px 10px;border-radius:10px;
+}
+
+/* Action row */
+.post-action{display:flex;padding:12px 14px 15px;gap:10px;}
+.btn-detail{
+  flex:1;
+  background:var(--coral-bg);border:1px solid var(--coral-mid);border-radius:14px;
+  padding:11px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;
+  color:var(--coral-text);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  box-shadow:var(--sh-btn);
+}
+.btn-ok{
+  flex:1;
+  background:var(--mint-bg);border:1px solid var(--mint-mid);border-radius:14px;
+  padding:11px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;
+  color:var(--mint-text);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  box-shadow:var(--sh-btn);
+}
+
+/* ── STATES ── */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:14px;}
+.spinner{width:36px;height:36px;border:2.5px solid var(--border2);border-top-color:var(--peach-mid);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:16px;color:var(--text2);}
+.empty-feed{text-align:center;padding:60px 20px;}
+.empty-feed-icon{font-size:52px;margin-bottom:14px;}
+.empty-feed-txt{font-size:17px;color:var(--text2);}
+
+/* ── OVERLAY + BOTTOM SHEET ── */
+.overlay{position:fixed;inset:0;background:rgba(58,40,30,.45);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(2px);}
+.overlay.show{opacity:1;pointer-events:all;}
+.sheet{
+  position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;
+  background:var(--card);border-radius:24px 24px 0 0;
+  z-index:101;display:flex;flex-direction:column;max-height:88vh;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  padding-bottom:env(safe-area-inset-bottom,0);
+  box-shadow:var(--sh-sheet);
+}
+.sheet.show{transform:translateY(0);}
+.sheet-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:14px auto 0;}
+.sheet-topbar{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 18px 0;}
+.sheet-avatar{
+  width:58px;height:58px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:800;color:#fff;flex-shrink:0;
+  box-shadow:0 3px 10px rgba(0,0,0,.15),inset 0 -2px 4px rgba(0,0,0,.10);
+}
+.sheet-meta{flex:1;padding:0 14px;}
+.sheet-name{font-size:18px;font-weight:700;color:var(--text);}
+.sheet-no{font-size:14px;color:var(--text2);margin-top:3px;}
+.sheet-close{
+  background:var(--page);border:1px solid var(--border2);
+  width:36px;height:36px;border-radius:50%;
+  font-size:17px;color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--sh-btn);
+}
+.sheet-stats{
+  display:flex;margin:16px 16px 0;
+  border-radius:18px;overflow:hidden;
+  box-shadow:var(--sh-card);
+}
+.sheet-stat{flex:1;text-align:center;padding:15px 4px;}
+.sheet-stat+.sheet-stat{border-left:1px solid rgba(255,255,255,.5);}
+.sheet-stat-val{font-size:30px;font-weight:800;line-height:1;}
+.sheet-stat-lbl{font-size:13px;font-weight:700;margin-top:4px;}
+.ss-out{background:var(--coral-bg);}
+.ss-out .sheet-stat-val,.ss-out .sheet-stat-lbl{color:var(--coral-text);}
+.ss-in{background:var(--mint-bg);}
+.ss-in .sheet-stat-val,.ss-in .sheet-stat-lbl{color:var(--mint-text);}
+.ss-diff{background:var(--peach-bg);}
+.ss-diff .sheet-stat-val,.ss-diff .sheet-stat-lbl{color:var(--peach-text);}
+.sheet-divider{height:1px;background:var(--border);margin:16px 0 0;}
+.sheet-sec{font-size:13px;font-weight:700;color:var(--text2);letter-spacing:.07em;padding:12px 18px 4px;text-transform:uppercase;}
+.sheet-body{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;}
+.sn-item{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);gap:14px;}
+.sn-num{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--page);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--text2);flex-shrink:0;
+}
+.sn-info{flex:1;overflow:hidden;}
+.sn-code{font-size:16px;font-weight:700;color:var(--text);font-family:monospace;}
+.sn-gas{font-size:14px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sn-date{font-size:13px;color:var(--text2);margin-top:3px;}
+.age-pill{font-size:14px;font-weight:700;padding:6px 12px;border-radius:12px;flex-shrink:0;text-align:right;}
+.age-ok{background:var(--mint-bg);color:var(--mint-text);}
+.age-mid{background:#FFF8DC;color:#8A6010;}
+.age-warn{background:var(--peach-bg);color:var(--peach-text);}
+.age-hot{background:var(--coral-bg);color:var(--coral-text);}
+.sheet-empty{text-align:center;padding:36px;color:var(--text2);font-size:16px;}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  background:var(--topbar);border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom,0));
+  flex-shrink:0;
+  box-shadow:0 -2px 10px rgba(80,50,30,.06);
+}
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 16px;cursor:pointer;color:var(--text2);}
+.bn-item.on{color:var(--text);}
+.bn-icon{font-size:28px;line-height:1;}
+.bn-lbl{font-size:11px;font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">TJG CLY <span id="runDateLbl"></span></div>
+  <button class="icon-btn" onclick="reload()" aria-label="รีเฟรชข้อมูล">↻</button>
+</div>
+
+<!-- STORIES -->
+<div class="stories-bar" id="storiesBar">
+  <div style="padding:8px 20px;color:var(--text2);font-size:13px">กำลังโหลด...</div>
+</div>
+
+<!-- DATE FILTER -->
+<div class="date-bar">
+  <button class="d-chip" onclick="setPreset('today',this)">วันนี้</button>
+  <button class="d-chip" onclick="setPreset('week',this)">7 วัน</button>
+  <button class="d-chip on" onclick="setPreset('month',this)">เดือนนี้</button>
+  <button class="d-chip" onclick="setPreset('3month',this)">3 เดือน</button>
+  <button class="d-chip" onclick="setPreset('all',this)">ทั้งหมด</button>
+  <button class="d-chip" onclick="setPreset('custom',this)">กำหนดเอง ✎</button>
+</div>
+<div class="custom-row" id="customRow">
+  <input type="date" class="d-input" id="dateFrom" onchange="applyCustom()">
+  <span class="d-sep">–</span>
+  <input type="date" class="d-input" id="dateTo" onchange="applyCustom()">
+</div>
+
+<!-- SEARCH -->
+<div class="search-bar">
+  <div class="search-inner">
+    <span style="color:var(--text2);font-size:16px">🔍</span>
+    <input type="search" id="searchInput" placeholder="ค้นหาลูกค้า..." oninput="renderFeed()">
+  </div>
+</div>
+
+<!-- KPI ROW -->
+<div class="kpi-row">
+  <div class="kpi-cell"><div class="kpi-val" id="kOut" style="color:var(--coral-text)">—</div><div class="kpi-lbl">OUT รวม</div></div>
+  <div class="kpi-cell"><div class="kpi-val" id="kIn" style="color:var(--mint-text)">—</div><div class="kpi-lbl">IN รวม</div></div>
+  <div class="kpi-cell"><div class="kpi-val" id="kDiff" style="color:var(--peach-text)">—</div><div class="kpi-lbl">คงค้าง SN</div></div>
+  <div class="kpi-cell"><div class="kpi-val" id="kCust">—</div><div class="kpi-lbl">ลูกค้ามีค้าง</div></div>
+</div>
+
+<!-- FEED -->
+<div class="scroll-area" id="feedArea">
+  <div class="loading" id="loadingDiv">
+    <div class="spinner"></div>
+    <div class="loading-txt">กำลังโหลดข้อมูล...</div>
+  </div>
+  <div class="feed" id="feed" style="display:none"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bn-item on"><div class="bn-icon">🏠</div><div class="bn-lbl">หน้าหลัก</div></div>
+  <div class="bn-item" onclick="filterPending()"><div class="bn-icon">📦</div><div class="bn-lbl">คงค้าง</div></div>
+  <div class="bn-item" onclick="window.location.href=DESKTOP_URL"><div class="bn-icon">🖥️</div><div class="bn-lbl">Desktop</div></div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="closeSheet()"></div>
+
+<!-- BOTTOM SHEET -->
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-topbar">
+    <div class="sheet-avatar" id="shAvatar"></div>
+    <div class="sheet-meta">
+      <div class="sheet-name" id="shName">—</div>
+      <div class="sheet-no" id="shNo">—</div>
+    </div>
+    <button class="sheet-close" onclick="closeSheet()" aria-label="ปิด">✕</button>
+  </div>
+  <div class="sheet-stats">
+    <div class="sheet-stat ss-out"><div class="sheet-stat-val" id="shOut">—</div><div class="sheet-stat-lbl">OUT</div></div>
+    <div class="sheet-stat ss-in"><div class="sheet-stat-val" id="shIn">—</div><div class="sheet-stat-lbl">IN</div></div>
+    <div class="sheet-stat ss-diff"><div class="sheet-stat-val" id="shDiff">—</div><div class="sheet-stat-lbl">คงค้าง</div></div>
+  </div>
+  <div class="sheet-divider"></div>
+  <div class="sheet-sec" id="shSecLabel">SN คงค้าง</div>
+  <div class="sheet-body" id="shBody"></div>
+</div>
+
+<script>
+/* ── CONFIG ── */
+/* แก้ URL นี้ให้ตรงกับ Apps Script Web App ของคุณ (URL เดียวกับที่ใช้เปิด index.html ปกติ) */
+const API_URL = 'https://script.google.com/macros/s/AKfycby3gj0_T1b5dPwl_2b34aZscHhdZZovT9oTiG4fxtJyLT7vB-0Lm9kEuy3ccW71AkKh/exec';
+const DESKTOP_URL = API_URL;
+
+/* ── STATE ── */
+let ALL_TXN=[],PENDING=[];
+let DATE_FROM='',DATE_TO='';
+let SHOW_PENDING_ONLY=false;
+
+/* ── Pastel avatar colors ── */
+const PASTEL_COLORS=[
+  ['#D4A0B0','#7A2840'],['#A0B8D4','#284A7A'],['#A0D4B8','#1A6644'],
+  ['#D4C4A0','#6A4A18'],['#C4A0D4','#5C2880'],['#D4B8A0','#704020'],
+  ['#A8D4D4','#1A6060'],['#D4A8A0','#7A2820']
+];
+function custColors(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))&0xfffffff;return PASTEL_COLORS[h%PASTEL_COLORS.length];}
+function initials(s){const w=s.trim().split(/\s+/);return w.length>1?(w[0][0]+w[1][0]).toUpperCase():s.slice(0,2).toUpperCase();}
+
+(function(){
+  const n=new Date(),iso=d=>d.toISOString().slice(0,10);
+  DATE_TO=iso(n);DATE_FROM=iso(new Date(n.getFullYear(),n.getMonth(),1));
+  const df=document.getElementById('dateFrom'),dt=document.getElementById('dateTo');
+  if(df)df.value=DATE_FROM;if(dt)dt.value=DATE_TO;
+})();
+
+/* ── DATA LOADING (fetch จาก Apps Script API) ── */
+function loadData(clear){
+  const url = API_URL + '?api=1' + (clear ? '&clear=1' : '');
+  fetch(url, {cache:'no-store'})
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(d=>{
+      if(d.error) throw new Error(d.error);
+      ALL_TXN=d.transactions||[];PENDING=d.pending||[];
+      const lbl=document.getElementById('runDateLbl');
+      if(lbl&&d.runDate)lbl.textContent='· '+thDate(d.runDate);
+      document.getElementById('loadingDiv').style.display='none';
+      document.getElementById('feed').style.display='flex';
+      renderFeed();
+    })
+    .catch(e=>{
+      document.getElementById('loadingDiv').style.display='flex';
+      document.getElementById('feed').style.display='none';
+      document.getElementById('loadingDiv').innerHTML=
+        '<div style="text-align:center;padding:30px"><div style="font-size:36px;margin-bottom:10px">⚠️</div>'
+        +'<div style="font-size:14px;color:var(--text2)">โหลดข้อมูลไม่ได้<br>'+esc(e.message||'error')+'</div>'
+        +'<button onclick="loadData(false)" style="margin-top:16px;padding:9px 22px;border:none;background:var(--text);color:#fff;border-radius:10px;font-family:\'Sarabun\',sans-serif;font-size:14px;cursor:pointer">ลองใหม่</button></div>';
+    });
+}
+loadData(false);
+
+/* ── PRESETS ── */
+function setPreset(mode,btn){
+  document.querySelectorAll('.d-chip').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  const n=new Date(),iso=d=>d.toISOString().slice(0,10);
+  document.getElementById('customRow').classList.remove('show');
+  SHOW_PENDING_ONLY=false;
+  document.querySelectorAll('.bn-item').forEach((b,i)=>{b.classList.toggle('on',i===0);});
+  if(mode==='today'){DATE_FROM=DATE_TO=iso(n);}
+  else if(mode==='week'){const s=new Date(n);s.setDate(s.getDate()-6);DATE_FROM=iso(s);DATE_TO=iso(n);}
+  else if(mode==='month'){DATE_FROM=iso(new Date(n.getFullYear(),n.getMonth(),1));DATE_TO=iso(n);}
+  else if(mode==='3month'){const s=new Date(n);s.setMonth(s.getMonth()-3);DATE_FROM=iso(s);DATE_TO=iso(n);}
+  else if(mode==='all'){DATE_FROM='2000-01-01';DATE_TO=iso(n);}
+  else if(mode==='custom'){document.getElementById('customRow').classList.add('show');return;}
+  document.getElementById('searchInput').value='';
+  renderFeed();
+}
+function applyCustom(){
+  DATE_FROM=document.getElementById('dateFrom').value||DATE_FROM;
+  DATE_TO=document.getElementById('dateTo').value||DATE_TO;
+  renderFeed();
+}
+function filterPending(){
+  SHOW_PENDING_ONLY=!SHOW_PENDING_ONLY;
+  document.querySelectorAll('.bn-item').forEach((b,i)=>{b.classList.toggle('on',i===(SHOW_PENDING_ONLY?1:0));});
+  renderFeed();
+}
+
+/* ── RENDER ── */
+function renderFeed(){
+  const q=(document.getElementById('searchInput').value||'').toLowerCase();
+  const filt=ALL_TXN.filter(t=>t.date>=DATE_FROM&&t.date<=DATE_TO);
+
+  const map={};
+  filt.forEach(t=>{
+    if(!map[t.custNo])map[t.custNo]={custNo:t.custNo,customer:t.customer,out:0,in:0,gasSet:new Set()};
+    if(t.trans==='OUT')map[t.custNo].out++;else map[t.custNo].in++;
+    if(t.gasType)map[t.custNo].gasSet.add(t.gasType);
+  });
+
+  let rows=Object.values(map)
+    .filter(c=>!q||(c.customer.toLowerCase().includes(q)||c.custNo.toLowerCase().includes(q)))
+    .filter(c=>!SHOW_PENDING_ONLY||c.out>c.in)
+    .sort((a,b)=>(Math.max(0,b.out-b.in)-Math.max(0,a.out-a.in))||b.out-a.out);
+
+  const totalOut=rows.reduce((s,c)=>s+c.out,0);
+  const totalIn=rows.reduce((s,c)=>s+c.in,0);
+  const custWithDiff=rows.filter(c=>c.out>c.in).length;
+  document.getElementById('kOut').textContent=totalOut;
+  document.getElementById('kIn').textContent=totalIn;
+  document.getElementById('kDiff').textContent=PENDING.length;
+  document.getElementById('kCust').textContent=custWithDiff;
+
+  renderStories(rows);
+
+  if(!rows.length){
+    document.getElementById('feed').innerHTML=
+      '<div class="empty-feed"><div class="empty-feed-icon">📭</div><div class="empty-feed-txt">ไม่พบข้อมูลในช่วงที่เลือก</div></div>';
+    return;
+  }
+
+  document.getElementById('feed').innerHTML=rows.map(c=>{
+    const diff=Math.max(0,c.out-c.in);
+    const hasDiff=diff>0;
+    const [bgColor,txtColor]=custColors(c.custNo);
+    const ins=initials(c.customer);
+    const pSN=PENDING.filter(p=>p.custNo===c.custNo);
+    const gasArr=[...c.gasSet].slice(0,4);
+
+    return `<div class="post">
+      <div class="post-header">
+        <div class="post-avatar" style="background:${bgColor};color:${txtColor}">${ins}</div>
+        <div class="post-meta">
+          <div class="post-name">${esc(c.customer)}</div>
+          <div class="post-handle">@${esc(c.custNo)}</div>
+        </div>
+        <div class="post-status">${hasDiff?'🔴':'✅'}</div>
+      </div>
+      <div class="post-stats">
+        <div class="pstat s-out"><div class="pstat-val">${c.out}</div><div class="pstat-lbl">OUT</div></div>
+        <div class="pstat s-in"><div class="pstat-val">${c.in}</div><div class="pstat-lbl">IN</div></div>
+        <div class="pstat s-diff${diff===0?' zero':''}"><div class="pstat-val">${diff}</div><div class="pstat-lbl">คงค้าง</div></div>
+      </div>
+      ${gasArr.length?`<div class="post-tags">${gasArr.map(g=>`<span class="gas-tag">#${esc(g.replace(/\s+/g,''))}</span>`).join('')}${c.gasSet.size>4?`<span class="gas-tag">+${c.gasSet.size-4}</span>`:''}</div>`:''}
+      <div class="post-action">
+        <button class="${hasDiff?'btn-detail':'btn-ok'}" onclick="openSheet('${esc(c.custNo)}','${escAttr(c.customer)}',${c.out},${c.in})">
+          ${hasDiff?`📋 ดู SN คงค้าง ${pSN.length} รายการ →`:'✅ ไม่มีค้าง'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderStories(rows){
+  const el=document.getElementById('storiesBar');
+  if(!rows.length){el.innerHTML='<div style="padding:8px 4px;color:var(--text2);font-size:13px">ไม่มีข้อมูล</div>';return;}
+  el.innerHTML=rows.slice(0,15).map(c=>{
+    const diff=Math.max(0,c.out-c.in);
+    const ring=diff>0?'':'ok';
+    const [bgColor,txtColor]=custColors(c.custNo);
+    const ins=initials(c.customer);
+    const short=c.customer.split(' ')[0];
+    return `<div class="story-item" onclick="openSheet('${esc(c.custNo)}','${escAttr(c.customer)}',${c.out},${c.in})">
+      <div class="story-ring ${ring}"><div class="story-avatar"><div class="avatar-inner" style="background:${bgColor};color:${txtColor}">${ins}</div></div></div>
+      <div class="story-lbl">${esc(short)}</div>
+      <div class="story-cnt">${diff>0?'ค้าง '+diff:'ครบ'}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── BOTTOM SHEET ── */
+function openSheet(custNo,custName,outCnt,inCnt){
+  const [bgColor,txtColor]=custColors(custNo);
+  const ins=initials(custName);
+  const av=document.getElementById('shAvatar');
+  av.style.background=bgColor;av.style.color=txtColor;av.textContent=ins;
+  document.getElementById('shName').textContent=custName;
+  document.getElementById('shNo').textContent='@'+custNo;
+  document.getElementById('shOut').textContent=outCnt;
+  document.getElementById('shIn').textContent=inCnt;
+  document.getElementById('shDiff').textContent=Math.max(0,outCnt-inCnt);
+
+  const snList=PENDING.filter(p=>p.custNo===custNo).sort((a,b)=>b.agingDay-a.agingDay);
+  document.getElementById('shSecLabel').textContent=snList.length?`SN คงค้าง · ${snList.length} รายการ`:'SN คงค้าง';
+
+  if(!snList.length){
+    document.getElementById('shBody').innerHTML='<div class="sheet-empty">✅ ไม่มี SN คงค้างในระบบ<br><span style="font-size:12px;color:var(--text2);display:block;margin-top:6px">ลูกค้าคืนถังครบแล้ว</span></div>';
+  }else{
+    document.getElementById('shBody').innerHTML=snList.map((p,i)=>{
+      const cls=p.agingDay>=180?'age-hot':p.agingDay>=150?'age-warn':p.agingDay>=120?'age-mid':'age-ok';
+      return `<div class="sn-item">
+        <div class="sn-num">${i+1}</div>
+        <div class="sn-info">
+          <div class="sn-code">${esc(p.sn)}</div>
+          <div class="sn-gas">${esc(p.gasType)}</div>
+          <div class="sn-date">📅 ส่งออก ${thDate(p.date)}</div>
+        </div>
+        <div class="age-pill ${cls}">${p.agingDay} วัน</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('sheet').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeSheet(){
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('sheet').classList.remove('show');
+  document.body.style.overflow='';
+}
+
+/* ── HELPERS ── */
+const TH_M=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function thDate(iso){if(!iso)return'—';const p=iso.split('-');return(+p[2])+' '+TH_M[+p[1]]+' '+(+p[0]+543);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return esc(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
+function reload(){
+  document.getElementById('loadingDiv').style.display='flex';
+  document.getElementById('feed').style.display='none';
+  loadData(true);
+}
+
+/* ── PWA service worker ── */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
