@@ -673,9 +673,9 @@ function openSheet(custNo,custName,outCnt,inCnt){
   document.getElementById('shNo').textContent='@'+custNo;
   document.getElementById('shOut').textContent=outCnt;
   document.getElementById('shIn').textContent=inCnt;
-  document.getElementById('shDiff').textContent=Math.max(0,outCnt-inCnt);
 
   const snList=PENDING.filter(p=>p.custNo===custNo).sort((a,b)=>b.agingDay-a.agingDay);
+  document.getElementById('shDiff').textContent=snList.length;
   document.getElementById('shSecLabel').textContent=snList.length?`SN คงค้าง · ${snList.length} รายการ`:'SN คงค้าง';
 
   if(!snList.length){
